@@ -44,3 +44,7 @@ next-env.d.ts
 *.mov
 *.mp4
 temp_videos/
+
+# large image files
+public/pattern.jpg
+public/7.jpg

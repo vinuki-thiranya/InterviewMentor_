@@ -1,42 +1,48 @@
 import React from 'react'
-import { FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { FormControl, FormField as RHFFormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Control } from "react-hook-form"
 
 interface FormFieldProps {
+  control: Control<any>
   label: string
   name: string
   type?: string
   placeholder?: string
-  value?: string
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
-  error?: string
 }
 
 const FormField = ({ 
+  control,
   label, 
   name, 
   type = "text", 
-  placeholder, 
-  value, 
-  onChange, 
-  error 
+  placeholder
 }: FormFieldProps) => {
   return (
-    <FormItem>
-      <FormLabel htmlFor={name}>{label}</FormLabel>
-      <FormControl>
-        <Input
-          id={name}
-          name={name}
-          type={type}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          className={error ? "border-red-500" : ""}
-        />
-      </FormControl>
-      {error && <FormMessage>{error}</FormMessage>}
-    </FormItem>
+    <RHFFormField
+      control={control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel htmlFor={name}>{label}</FormLabel>
+          <FormControl>
+            <Input
+              id={name}
+              type={type}
+              placeholder={placeholder}
+              autoComplete={
+                name === 'email' ? 'email' :
+                name === 'password' ? 'current-password' :
+                name === 'name' ? 'name' :
+                'off'
+              }
+              {...field}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
   )
 }
 

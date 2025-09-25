@@ -10,19 +10,27 @@ const SESSION_DURATION = 60 * 60 * 24 * 7;
 export async function setSessionCookie(idToken: string) {
   const cookieStore = await cookies();
 
-  // Create session cookie
-  const sessionCookie = await auth.createSessionCookie(idToken, {
-    expiresIn: SESSION_DURATION * 1000, // milliseconds
-  });
+  try {
+    console.log("Creating session cookie from ID token");
+    // Create session cookie
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+      expiresIn: SESSION_DURATION * 1000, // milliseconds
+    });
 
-  // Set cookie in the browser
-  cookieStore.set("session", sessionCookie, {
-    maxAge: SESSION_DURATION,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    sameSite: "lax",
-  });
+    console.log("Session cookie created, setting in browser");
+    // Set cookie in the browser
+    cookieStore.set("session", sessionCookie, {
+      maxAge: SESSION_DURATION,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "lax",
+    });
+    console.log("Session cookie set successfully");
+  } catch (error) {
+    console.error("Error setting session cookie:", error);
+    throw error;
+  }
 }
 
 export async function signUp(params: SignUpParams) {
@@ -71,16 +79,26 @@ export async function signIn(params: SignInParams) {
   const { email, idToken } = params;
 
   try {
+    console.log("Sign in attempt for email:", email);
     const userRecord = await auth.getUserByEmail(email);
-    if (!userRecord)
+    if (!userRecord) {
+      console.log("User not found in Firebase Auth");
       return {
         success: false,
         message: "User does not exist. Create an account.",
       };
+    }
 
+    console.log("Setting session cookie...");
     await setSessionCookie(idToken);
+    console.log("Session cookie set successfully");
+
+    return {
+      success: true,
+      message: "Signed in successfully.",
+    };
   } catch (error: any) {
-    console.log("");
+    console.error("Sign in error:", error);
 
     return {
       success: false,
@@ -101,24 +119,36 @@ export async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
 
   const sessionCookie = cookieStore.get("session")?.value;
-  if (!sessionCookie) return null;
+  console.log("Session cookie exists:", !!sessionCookie);
+  
+  if (!sessionCookie) {
+    console.log("No session cookie found");
+    return null;
+  }
 
   try {
+    console.log("Verifying session cookie...");
     const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+    console.log("Session verified for user:", decodedClaims.uid);
 
     // get user info from db
     const userRecord = await db
       .collection("users")
       .doc(decodedClaims.uid)
       .get();
-    if (!userRecord.exists) return null;
+    
+    if (!userRecord.exists) {
+      console.log("User record not found in database");
+      return null;
+    }
 
+    console.log("User authenticated successfully");
     return {
       ...userRecord.data(),
       id: userRecord.id,
     } as User;
   } catch (error) {
-    console.log(error);
+    console.error("Session verification failed:", error);
 
     // Invalid or expired session
     return null;

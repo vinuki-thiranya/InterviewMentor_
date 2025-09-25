@@ -88,13 +88,24 @@ const AuthForm = ({ type }: { type: FormType }) => {
           return;
         }
 
-        await signIn({
+        console.log("Calling signIn server action...");
+        const result = await signIn({
           email,
           idToken,
         });
 
+        if (!result.success) {
+          toast.error(result.message);
+          return;
+        }
+
         toast.success("Signed in successfully.");
-        router.push("/");
+        console.log("Navigating to home page...");
+        
+        // Add a small delay to ensure session cookie is properly set
+        setTimeout(() => {
+          window.location.href = "/"; // Use window.location instead of router.push for full page reload
+        }, 100);
       }
     } catch (error: any) {
       console.error("Authentication error:", error);

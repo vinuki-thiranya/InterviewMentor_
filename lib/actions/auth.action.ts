@@ -89,6 +89,17 @@ export async function signIn(params: SignInParams) {
       };
     }
 
+    // Check if user exists in Firestore, create if not
+    const firestoreUserDoc = await db.collection("users").doc(userRecord.uid).get();
+    if (!firestoreUserDoc.exists) {
+      console.log("User record not found in Firestore, creating...");
+      await db.collection("users").doc(userRecord.uid).set({
+        name: userRecord.displayName || userRecord.email?.split('@')[0] || "User",
+        email: userRecord.email,
+      });
+      console.log("User record created in Firestore");
+    }
+
     console.log("Setting session cookie...");
     await setSessionCookie(idToken);
     console.log("Session cookie set successfully");

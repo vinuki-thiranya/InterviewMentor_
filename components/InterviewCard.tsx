@@ -13,8 +13,12 @@ const InterviewCard = async ({
   userId,
   role,
   type,
+  level,
   techstack,
   createdAt,
+  coverImage,
+  questions,
+  finalized,
 }: InterviewCardProps) => {
   const feedback = null as Feedback | null
     
@@ -44,15 +48,18 @@ const InterviewCard = async ({
 
           {/* Cover Image */}
           <Image
-            src={getRandomInterviewCover()}
+            src={coverImage || getRandomInterviewCover()}
             alt="cover-image"
             width={90}
             height={90}
             className="rounded-full object-fit size-[90px]"
           />
 
-          {/* Interview Role */}
+          {/* Interview Role & Level */}
           <h3 className="mt-5 capitalize">{role} Interview</h3>
+          {level && (
+            <p className="text-sm text-gray-600 capitalize mt-1">{level} Level</p>
+          )}
 
           {/* Date & Score */}
           <div className="flex flex-row gap-5 mt-3">
@@ -71,6 +78,22 @@ const InterviewCard = async ({
               <p>{feedback?.totalScore || "---"}/100</p>
             </div>
           </div>
+
+          {/* Question Count */}
+          {questions && questions.length > 0 && (
+            <div className="flex flex-row gap-2 items-center mt-2">
+              <Image src="/file.svg" width={18} height={18} alt="questions" />
+              <p className="text-sm text-gray-600">{questions.length} Questions</p>
+            </div>
+          )}
+
+          {/* Interview Status */}
+          {finalized !== undefined && (
+            <div className="flex flex-row gap-2 items-center mt-2">
+              <div className={`w-2 h-2 rounded-full ${finalized ? 'bg-green-500' : 'bg-yellow-500'}`}></div>
+              <p className="text-sm text-gray-600">{finalized ? 'Ready' : 'Draft'}</p>
+            </div>
+          )}
 
           {/* Feedback or Placeholder Text */}
           <p className="line-clamp-2 mt-5">

@@ -99,25 +99,10 @@ export const mappings = {
 
 export const interviewer: CreateAssistantDTO = {
   name: "Interviewer",
-  firstMessage:
-    "Hello! Thank you for taking the time to speak with me today. I'm excited to learn more about you and your experience.",
-  transcriber: {
-    provider: "deepgram",
-    model: "nova-2",
-    language: "en",
-  },
-  voice: {
-    provider: "11labs",
-    voiceId: "sarah",
-    stability: 0.4,
-    similarityBoost: 0.8,
-    speed: 0.9,
-    style: 0.5,
-    useSpeakerBoost: true,
-  },
+  firstMessage: "Hello! Thank you for taking the time to speak with me today. I'm excited to learn more about you and your experience.",
   model: {
     provider: "openai",
-    model: "gpt-4",
+    model: "gpt-3.5-turbo",
     messages: [
       {
         role: "system",

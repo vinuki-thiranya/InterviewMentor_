@@ -5,28 +5,47 @@ import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
 
 export async function POST(request: Request) {
-  const { type, role, level, techstack, amount, userid } = await request.json();
-
-  // Validate required fields
-  if (!type || !role || !level || !amount || !userid) {
-    return Response.json(
-      { error: "Missing required fields: type, role, level, amount, userid" },
-      { status: 400 }
-    );
-  }
-
-  // Handle techstack safely
-  const techStackArray = techstack ? techstack.split(",").map((tech: string) => tech.trim()) : [];
-
   try {
+    const requestBody = await request.json();
+    console.log('📥 Received interview generation request:', requestBody);
+    
+    const { type, role, level, techstack, amount, userid } = requestBody;
+
+    // Validate required fields
+    if (!userid) {
+      console.error('❌ Missing userid');
+      return Response.json(
+        { error: "Missing required field: userid" },
+        { status: 400 }
+      );
+    }
+
+    // Use defaults for missing fields
+    const finalRole = role || "Software Engineer";
+    const finalType = type || "technical";
+    const finalLevel = level || "mid";
+    const finalAmount = amount || "5";
+
+    console.log('🔧 Using interview parameters:', {
+      role: finalRole,
+      type: finalType,
+      level: finalLevel,
+      amount: finalAmount,
+      userid
+    });
+
+    // Handle techstack safely
+    const techStackArray = techstack ? techstack.split(",").map((tech: string) => tech.trim()) : ["General"];
+
+    console.log('🤖 Generating questions with AI...');
     const { text: questions } = await generateText({
       model: google("gemini-2.0-flash-001"),
       prompt: `Prepare questions for a job interview.
-        The job role is ${role}.
-        The job experience level is ${level}.
-        The tech stack used in the job is: ${techStackArray.length > 0 ? techStackArray.join(", ") : "General"}.
-        The focus between behavioural and technical questions should lean towards: ${type}.
-        The amount of questions required is: ${amount}.
+        The job role is ${finalRole}.
+        The job experience level is ${finalLevel}.
+        The tech stack used in the job is: ${techStackArray.join(", ")}.
+        The focus between behavioural and technical questions should lean towards: ${finalType}.
+        The amount of questions required is: ${finalAmount}.
         Please return only the questions, without any additional text.
         The questions are going to be read by a voice assistant so do not use "/" or "*" or any other special characters which might break the voice assistant.
         Return the questions formatted like this:
@@ -35,6 +54,8 @@ export async function POST(request: Request) {
         Thank you! <3
     `,
     });
+
+    console.log('📝 Generated questions:', questions);
 
     // Parse questions safely
     let parsedQuestions;
@@ -49,9 +70,9 @@ export async function POST(request: Request) {
     }
 
     const interview = {
-      role: role,
-      type: type,
-      level: level,
+      role: finalRole,
+      type: finalType,
+      level: finalLevel,
       techstack: techStackArray,
       questions: parsedQuestions,
       userId: userid,
@@ -60,11 +81,13 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
     };
 
-    await db.collection("interviews").add(interview);
+    console.log('💾 Saving interview to Firebase:', interview);
+    const docRef = await db.collection("interviews").add(interview);
+    console.log('✅ Interview saved successfully with ID:', docRef.id);
 
-    return Response.json({ success: true }, { status: 200 });
+    return Response.json({ success: true, interviewId: docRef.id }, { status: 200 });
   } catch (error) {
-    console.error("Error generating interview:", error);
+    console.error("Error in interview generation:", error);
     return Response.json(
       { 
         error: "Failed to generate interview",

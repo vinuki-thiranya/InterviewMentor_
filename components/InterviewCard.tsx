@@ -3,7 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import{ interviewCovers, mappings} from "@/constants";
 import { getRandomInterviewCover } from "@/lib/utils";
-import DisplayTechIcons from "./DisplayTechlcons";
+import DisplayTechIcons from "./DisplayTechIcons";
+import { getFeedbackByInterviewId } from "@/lib/actions/general.action";
 
 import { Button } from "./ui/button";
 
@@ -20,7 +21,10 @@ const InterviewCard = async ({
   questions,
   finalized,
 }: InterviewCardProps) => {
-  const feedback = null as Feedback | null
+  // Fetch actual feedback if interviewId and userId are provided
+  const feedback = interviewId && userId 
+    ? await getFeedbackByInterviewId({ interviewId, userId })
+    : null;
     
      
  

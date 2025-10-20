@@ -2,28 +2,46 @@
 
 import { db } from "@/firebase/admin";
 
-export async function createFeedback(params: {
-  interviewId: string;
-  userId: string;
-  feedback: string;
-  score?: number;
-}) {
-  const { interviewId, userId, feedback, score } = params;
+export async function createFeedback(params: CreateFeedbackParams) {
+  const { interviewId, userId, transcript } = params;
 
   try {
-    const feedbackData = {
+    // Import generateObject here to avoid import issues
+    const { generateObject } = await import("ai");
+    const { google } = await import("@ai-sdk/google");
+    const { feedbackSchema } = await import("@/constants");
+
+    // Generate structured feedback using AI
+    const { object: feedbackData } = await generateObject({
+      model: google("gemini-2.0-flash-001"),
+      schema: feedbackSchema,
+      prompt: `Analyze the following interview transcript and provide detailed feedback:
+
+${transcript.map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+
+Provide a comprehensive assessment including:
+1. Overall score (0-100)
+2. Category scores for Communication Skills, Technical Knowledge, Problem Solving, Cultural Fit, and Confidence and Clarity
+3. Specific strengths identified
+4. Areas for improvement
+5. Final assessment summary
+
+Be constructive and specific in your feedback.`,
+    });
+
+    const feedback = {
       interviewId,
       userId,
-      feedback,
-      score: score || 0,
+      ...feedbackData,
       createdAt: new Date().toISOString(),
     };
 
-    await db.collection("feedback").add(feedbackData);
+    const docRef = await db.collection("feedback").add(feedback);
 
     return {
       success: true,
       message: "Feedback created successfully",
+      feedbackId: docRef.id,
     };
   } catch (error: any) {
     console.error("Error creating feedback:", error);
@@ -87,7 +105,7 @@ export async function getInterviewById(interviewId: string) {
       interview: {
         id: interviewDoc.id,
         ...interviewDoc.data(),
-      },
+      } as Interview,
     };
   } catch (error: any) {
     console.error("Error fetching interview:", error);
@@ -111,7 +129,7 @@ export async function getInterviewsByUserId(userId: string) {
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }))
+      } as Interview))
       .sort((a: any, b: any) => {
         const dateA = new Date(a.createdAt);
         const dateB = new Date(b.createdAt);
@@ -139,7 +157,7 @@ export async function getLatestInterviews(params: GetLatestInterviewsParams) {
       .map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }))
+      } as Interview))
       .filter((interview: any) => interview.userId !== userId) // Exclude user's own interviews
       .sort((a: any, b: any) => {
         const dateA = new Date(a.createdAt);
@@ -173,7 +191,7 @@ export async function getFeedbackByInterviewId(params: GetFeedbackByInterviewIdP
     return {
       id: feedbackDoc.id,
       ...feedbackDoc.data(),
-    };
+    } as Feedback;
   } catch (error: any) {
     console.error("Error fetching feedback:", error);
     return null;

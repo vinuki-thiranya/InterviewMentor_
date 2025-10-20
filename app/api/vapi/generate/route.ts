@@ -7,9 +7,23 @@ import { getRandomInterviewCover } from "@/lib/utils";
 export async function POST(request: Request) {
   try {
     const requestBody = await request.json();
-    console.log('📥 Received interview generation request:', requestBody);
+    console.log('📥 Received interview generation request:', JSON.stringify(requestBody, null, 2));
     
-    const { type, role, level, techstack, amount, userid } = requestBody;
+    const { type, role, level, techstack, tech_stack, amount, userid } = requestBody;
+    
+    // Handle both techstack and tech_stack parameter names
+    const finalTechstack = techstack || tech_stack;
+    
+    // Log each parameter individually to see what we received
+    console.log('🔍 Parameter analysis:');
+    console.log('  - role:', role, typeof role);
+    console.log('  - type:', type, typeof type);
+    console.log('  - level:', level, typeof level);
+    console.log('  - techstack:', techstack, typeof techstack);
+    console.log('  - tech_stack:', tech_stack, typeof tech_stack);
+    console.log('  - finalTechstack:', finalTechstack, typeof finalTechstack);
+    console.log('  - amount:', amount, typeof amount);
+    console.log('  - userid:', userid, typeof userid);
 
     // Validate required fields
     if (!userid) {
@@ -35,9 +49,17 @@ export async function POST(request: Request) {
     });
 
     // Handle techstack safely
-    const techStackArray = techstack ? techstack.split(",").map((tech: string) => tech.trim()) : ["General"];
+    const techStackArray = finalTechstack ? finalTechstack.split(",").map((tech: string) => tech.trim()) : ["General"];
 
     console.log('🤖 Generating questions with AI...');
+    console.log('📋 AI Prompt parameters:', {
+      finalRole,
+      finalLevel, 
+      techStackArray: techStackArray.join(", "),
+      finalType,
+      finalAmount
+    });
+    
     const { text: questions } = await generateText({
       model: google("gemini-2.0-flash-001"),
       prompt: `Prepare questions for a job interview.

@@ -1,42 +1,63 @@
-import Agent from "@/components/Agent";
-import { getCurrentUser } from "@/lib/actions/auth.action";
-import { getInterviewById } from "@/lib/actions/general.action";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 
-interface PageProps {
-  params: {
-    id: string;
-  };
-}
+import Agent from "@/components/Agent";
+import { getRandomInterviewCover } from "@/lib/utils";
 
-const InterviewPage = async ({ params }: PageProps) => {
+import {
+  getFeedbackByInterviewId,
+  getInterviewById,
+} from "@/lib/actions/general.action";
+import { getCurrentUser } from "@/lib/actions/auth.action";
+import DisplayTechIcons from "@/components/DisplayTechIcons";
+
+const InterviewDetails = async ({ params }: RouteParams) => {
+  const { id } = await params;
+
   const user = await getCurrentUser();
-  const { success, interview } = await getInterviewById(params.id);
 
-  if (!success || !interview) {
-    redirect("/");
-  }
+  const interviewResult = await getInterviewById(id);
+  if (!interviewResult.success || !interviewResult.interview) redirect("/");
+  const interview = interviewResult.interview;
+
+  const feedback = await getFeedbackByInterviewId({
+    interviewId: id,
+    userId: user?.id!,
+  });
 
   return (
     <>
-      <div className="flex flex-col gap-4 mb-6">
-        <h2>Mock Interview: {interview.role}</h2>
-        <div className="flex gap-4 text-sm text-gray-600">
-          <span>Type: {interview.type}</span>
-          <span>Level: {interview.level}</span>
-          <span>Questions: {interview.questions?.length || 0}</span>
+      <div className="flex flex-row gap-4 justify-between">
+        <div className="flex flex-row gap-4 items-center max-sm:flex-col">
+          <div className="flex flex-row gap-4 items-center">
+            <Image
+              src={getRandomInterviewCover()}
+              alt="cover-image"
+              width={40}
+              height={40}
+              className="rounded-full object-cover size-[40px]"
+            />
+            <h3 className="capitalize">{interview.role} Interview</h3>
+          </div>
+
+          <DisplayTechIcons techStack={interview.techstack} />
         </div>
+
+        <p className="bg-dark-200 px-4 py-2 rounded-lg h-fit">
+          {interview.type}
+        </p>
       </div>
 
       <Agent
         userName={user?.name!}
         userId={user?.id}
-        interviewId={interview.id}
+        interviewId={id}
         type="interview"
         questions={interview.questions}
+        feedbackId={feedback?.id}
       />
     </>
   );
 };
 
-export default InterviewPage;
+export default InterviewDetails;

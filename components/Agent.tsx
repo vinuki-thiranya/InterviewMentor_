@@ -314,11 +314,17 @@ const Agent = ({
     const handleGenerateFeedback = async (messages: SavedMessage[]) => {
       console.log("handleGenerateFeedback");
 
+      // Convert messages to transcript format
+      const transcript = messages.map(msg => ({
+        role: msg.role === "assistant" ? "interviewer" : "candidate",
+        content: msg.content
+      }));
+
       const { success } = await createFeedback({
         interviewId: interviewId!,
         userId: userId!,
-        feedback: JSON.stringify(messages), // Convert transcript to string
-        score: 0, // Default score
+        transcript,
+        feedbackId,
       });
 
       if (success) {

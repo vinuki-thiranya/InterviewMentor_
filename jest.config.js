@@ -24,22 +24,7 @@ const customJestConfig = {
     '!**/node_modules/**',
   ],
   coverageReporters: ['text', 'lcov', 'html'],
-  coverageDirectory: 'coverage',
-  transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', {
-      presets: [
-        ['@babel/preset-env', { targets: { node: 'current' } }],
-        ['@babel/preset-react', { runtime: 'automatic' }],
-        '@babel/preset-typescript'
-      ]
-    }]
-  },
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
-  globals: {
-    'ts-jest': {
-      useESM: true
-    }
-  }
+  coverageDirectory: 'coverage'
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
